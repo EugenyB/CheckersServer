@@ -2,8 +2,7 @@ package checkers.client.main.controller;
 
 import checkers.client.main.Piece;
 import checkers.client.main.model.Game;
-import checkers.client.main.model.moves.OtherMove;
-import checkers.client.main.model.moves.State;
+import checkers.client.main.model.moves.*;
 import checkers.client.main.util.Pair;
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
@@ -33,13 +32,20 @@ public class Controller {
     private PrintWriter out;
     private Connection connection;
 
+    private static Controller instance;
+
     @FXML private Canvas canvas;
     @FXML private Pane pane;
 
     public Controller() {
     }
 
+    public static Controller getInstance() {
+        return instance;
+    }
+
     public void initialize() {
+        instance = this;
         try {
             connectToServer();
             game = new Game();
@@ -77,14 +83,16 @@ public class Controller {
         }
     }
 
-    private void draw() {
+    public synchronized void draw() {
         GraphicsContext gc = canvas.getGraphicsContext2D();
+        gc.setFill(Color.WHITESMOKE);
+        gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
         for (Piece piece : game.getPieces()) {
             double y = piece.getRow() * SIZE * Math.sqrt(3) / 2.0;
             double x = piece.getColumn() * SIZE / 2.0;
             gc.setFill(piece.getColor());
             gc.fillOval(x, y, SIZE, SIZE);
-            if (piece.isSelected()) {
+            if (piece.equals(game.getSelectedPiece())) {
                 // draw selection
                 gc.strokeOval(x + SIZE / 4.0, y + SIZE / 4.0, SIZE / 2.0, SIZE / 2.0);
             }
@@ -114,20 +122,41 @@ public class Controller {
         double x = e.getX();
         double y = e.getY();
         Pair p = findCell(x,y);
-        // todo checkCell
-        if (p != null) {
-            Optional<Piece> f = game.findPiece(p);
-            if (f.isEmpty()) {
-                System.out.println("none");
-            } else {
-                if (f.get().getColor().equals(game.getPlayerColor())) {
-                    System.out.println("ok");
-                    Piece piece = f.get();
-                    select(piece);
-                    draw();
+        if (game.getPlayerState().getClass() == StartMove.class) {
+            if (p != null) {
+                Optional<Piece> f = game.findPiece(p);
+                if (f.isEmpty()) {
+                    System.out.println("none");
                 } else {
-                    System.out.println("err");
+                    if (f.get().getColor().equals(game.getPlayerColor())) {
+                        System.out.println("ok");
+                        Piece piece = f.get();
+                        select(piece);
+                        game.setPlayerState(game.getPlayerState().select(p));
+                        //connection.send(String.format("Start(%d,%d)", p.getI(), p.getJ()));
+                        draw();
+                    } else {
+                        System.out.println("err");
+                    }
                 }
+            }
+        } else if (game.getPlayerState().getClass() == ProcessMove.class) {
+            if (p!=null) {
+                MoveType type = game.isMoveValid(p);
+                //System.out.println(valid);
+                if (type == MoveType.SIMPLE) {
+                    Piece sp = game.getSelectedPiece();
+                    String moveLine = String.format("Simple(%d,%d,%d,%d)", sp.getRow(), sp.getColumn(), p.getI(), p.getJ());
+                    game.simpleMovePiece(p);
+                    connection.send(moveLine);
+                }
+                else if (type == MoveType.JUMP) {
+                    Piece sp = game.getSelectedPiece();
+                    String moveLine = String.format("Simple(%d,%d,%d,%d)", sp.getRow(), sp.getColumn(), p.getI(), p.getJ());
+                    game.simpleMovePiece(p); // todo предусмотреть, чтобы ход не передавался сразу
+                    connection.send(moveLine);
+                }
+                draw();
             }
         }
     }
@@ -136,6 +165,7 @@ public class Controller {
         for (Piece p : game.getPieces()) {
             p.setSelected(p.equals(piece));
         }
+        game.setSelectedPiece(piece);
     }
 
     private Pair findCell(double x, double y) {

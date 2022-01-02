@@ -26,6 +26,7 @@ public class Game {
     private List<Piece> pieces = new ArrayList<>();
     private Color playerColor;
     private State playerState;
+    private Piece selectedPiece = null;
 
 
     public MoveType isMoveValid(int startRow, int startCol, int endRow, int endCol) {
@@ -37,16 +38,23 @@ public class Game {
         if (Math.abs(endRow-startRow)==1 && Math.abs(endCol - startCol) == 1) return MoveType.SIMPLE;
         if (Math.abs(endCol-startCol)==2 && endRow==startRow) return MoveType.SIMPLE;
         // прыжок
-        int midRow = endRow-startRow;
-        int midCol = endCol-startCol;
+        int midRow = (endRow+startRow)/2;
+        int midCol = (endCol+startCol)/2;
         if (Math.abs(endRow-startRow)==2 && Math.abs(endCol - startCol) == 2 && isOccupied(field[midRow][midCol])) return MoveType.JUMP;
         if (Math.abs(endCol-startCol)==4 && endRow==startRow && isOccupied(field[midRow][midCol])) return MoveType.JUMP;
         return MoveType.IMPOSSIBLE;
     }
 
+    public MoveType isMoveValid(Pair p) {
+        if (selectedPiece == null) return MoveType.IMPOSSIBLE;
+        if (p == null) return MoveType.IMPOSSIBLE;
+        return isMoveValid(selectedPiece.getRow(), selectedPiece.getColumn(), p.getI(), p.getJ());
+    }
+
     public void createField(String s) {
             field = new int[H][W];
             int k = 0;
+            pieces.clear();
             for (int i = 0; i < H; i++) {
                 for (int j = 0; j < W; j++) {
                     field[i][j] = s.charAt(k++) - '0';
@@ -55,6 +63,7 @@ public class Game {
                     }
                 }
             }
+        //updateField(s);
             // Color 0xff0000ff
             String tail = s.substring(H*W+2, H*W+8);
             field[0][0] = Integer.parseInt(tail,16);
@@ -89,7 +98,26 @@ public class Game {
         // todo process game over
     }
 
-    public void updateField(String line) {
-        // todo process update field (as in create field)
+    public void updateField(String s) {
+        int k = 0;
+        pieces.clear();
+        for (int i = 0; i < H; i++) {
+            for (int j = 0; j < W; j++) {
+                field[i][j] = s.charAt(k++) - '0';
+                if (field[i][j] > 0 && field[i][j] < 9) {
+                    pieces.add(new Piece(i, j, field[i][j]));
+                }
+            }
+        }
+    }
+
+    public void simpleMovePiece(Pair p) {
+        int color = field[selectedPiece.getRow()][selectedPiece.getColumn()];
+        field[selectedPiece.getRow()][selectedPiece.getColumn()] = 0;
+        selectedPiece.setRow(p.getI());
+        selectedPiece.setColumn(p.getJ());
+        field[selectedPiece.getRow()][selectedPiece.getColumn()] = color;
+        selectedPiece.setSelected(false);
+        selectedPiece = null;
     }
 }

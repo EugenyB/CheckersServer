@@ -8,10 +8,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
-import java.util.Random;
+import java.util.*;
 
 import static checkers.client.main.GameConstants.COLORS;
 
@@ -20,7 +17,7 @@ public class Main {
     private static Main instance;
 
     private int numOfPlayers;
-    private int[][] field;
+    private volatile int[][] field;
     private Color[] colors;
     private int playerToMove;
 
@@ -55,7 +52,7 @@ public class Main {
             }
             colors = new Color[numOfPlayers];
             for (int i = 0; i < numOfPlayers; i++) {
-                colors[i] = COLORS[i+1];
+                colors[i] = COLORS[i+1]; // as COLORS[0] - is color of empty cell
             }
             int port = Integer.parseInt(props.getProperty("serverport"));
             serverSocket = new ServerSocket(port);
@@ -95,7 +92,22 @@ public class Main {
         }
     }
 
-    private void processMove() {
+    public synchronized void sendPlayerMove(String str) {
+        if (str.startsWith("Simple")) {
+            String line = str.substring(7,str.length()-1);
+            System.out.println(line);
+            int[] ints = Arrays.stream(line.split(",")).mapToInt(Integer::parseInt).toArray();
+            int fromRow = ints[0];
+            int fromColumn = ints[1];
+            int toRow = ints[2];
+            int toColumn = ints[3];
+            field[toRow][toColumn] = field[fromRow][fromColumn];
+            field[fromRow][fromColumn] = 0;
+            notify();
+        }
+    }
+
+    public void processMove() {
         // todo change with program logic
         playerToMove++;
         if (playerToMove >= players.size()) playerToMove = 0;
@@ -104,6 +116,7 @@ public class Main {
     private void broadcastMove() {
         for (Player player : players) {
             player.sendMessage("Move:"+colors[playerToMove]);
+            player.updateField(field);
         }
     }
 

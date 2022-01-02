@@ -1,6 +1,7 @@
 package checkers.client.main.controller;
 
 import checkers.client.main.model.Game;
+import javafx.application.Platform;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -22,15 +23,17 @@ public class Connection implements Runnable {
         try {
             String line;
             while (isGameProceed(line = in.readLine())) {
-                if (line.startsWith("Move:")) {
+                if (line.startsWith("Field:")) {
+                    game.updateField(line.substring("Field:".length()));
+                } else if (line.startsWith("Move:")) {
                     game.processChangeMove(line.substring(5));
                 } else if (line.startsWith("Turn:")) {
                     game.processTurn(line.substring(5));
                 } else if (line.startsWith("End")) {
                     game.processGameOver();
-                } else {
-                    game.updateField(line);
                 }
+//                Platform.runLater(()->Controller.getInstance().draw());
+                Controller.getInstance().draw();
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -39,5 +42,9 @@ public class Connection implements Runnable {
 
     private boolean isGameProceed(String line) {
         return true;
+    }
+
+    public void send(String line) {
+        out.println(line);
     }
 }

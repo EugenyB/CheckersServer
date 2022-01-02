@@ -42,6 +42,8 @@ public class Player implements Runnable {
     private void process() {
         try {
             String str = in.readLine();
+            System.out.println(str);
+            Main.getInstance().sendPlayerMove(str);
             if (str.isBlank()) finished = true;
         } catch (IOException e) {
             finished = true;
@@ -57,6 +59,16 @@ public class Player implements Runnable {
             }
         }
         buf.append(color);
+        out.println(buf);
+    }
+
+    public void updateField(int[][] field) {
+        StringBuilder buf = new StringBuilder("Field:");
+        for (int i = 0; i < field.length; i++) {
+            for (int j = 0; j < field[i].length; j++) {
+                buf.append(field[i][j]);
+            }
+        }
         out.println(buf);
     }
 

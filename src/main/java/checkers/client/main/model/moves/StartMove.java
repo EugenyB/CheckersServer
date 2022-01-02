@@ -5,7 +5,7 @@ import checkers.client.main.util.Pair;
 public class StartMove extends State {
     @Override
     public State select(Pair p) {
-        // set piece selected
+        // todo set piece selected
         return new ProcessMove();
     }
 }
