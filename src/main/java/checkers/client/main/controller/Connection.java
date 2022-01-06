@@ -8,9 +8,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 
 public class Connection implements Runnable {
-    private BufferedReader in;
-    private PrintWriter out;
-    private Game game;
+    private final BufferedReader in;
+    private final PrintWriter out;
+    private final Game game;
 
     public Connection(BufferedReader in, PrintWriter out, Game game) {
         this.in = in;
@@ -21,28 +21,28 @@ public class Connection implements Runnable {
     @Override
     public void run() {
         try {
-            String line;
-            while (isGameProceed(line = in.readLine())) {
+            while (true) {
+                String line = in.readLine();
                 if (line.startsWith("Field:")) {
                     game.updateField(line.substring("Field:".length()));
                 } else if (line.startsWith("Move:")) {
                     game.processChangeMove(line.substring(5));
-                } else if (line.startsWith("Turn:")) {
-                    game.processTurn(line.substring(5));
                 } else if (line.startsWith("End")) {
-                    game.processGameOver();
+                    game.processGameOver(line);
+                    in.close();
+                    out.close();
+                    break;
                 }
-//                Platform.runLater(()->Controller.getInstance().draw());
                 Controller.getInstance().draw();
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-
-    private boolean isGameProceed(String line) {
-        return true;
-    }
+//
+//    private boolean isGameProceed(String line) {
+//        return true;
+//    }
 
     public void send(String line) {
         out.println(line);

@@ -11,4 +11,16 @@ public class GameConstants {
     public static final Color[] COLORS = {
         Color.GRAY, Color.BLUE, Color.RED, Color.rgb(0,255,0), Color.CYAN, Color.MAGENTA, Color.YELLOW
     };
+
+    public static final Color[] COLORS_3 = {
+            Color.GRAY, Color.BLUE, Color.rgb(0,255,0), Color.CYAN
+    };
+
+    public static final Color[] COLORS_4 = {
+            Color.GRAY, Color.BLUE, Color.MAGENTA, Color.RED, Color.CYAN
+    };
+
+    public static final Color[] COLORS_6 = {
+            Color.GRAY, Color.BLUE, Color.MAGENTA,  Color.rgb(0,255,0), Color.RED, Color.CYAN, Color.YELLOW
+    };
 }

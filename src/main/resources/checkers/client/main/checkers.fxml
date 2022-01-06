@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.canvas.*?>
+<?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
 <BorderPane xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="checkers.client.main.controller.Controller">
@@ -9,4 +10,11 @@
          <Canvas fx:id="canvas" height="200.0" width="200.0" />
       </Pane>
    </center>
+   <top>
+      <AnchorPane prefHeight="30.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+         <Label fx:id="moveIndicator" alignment="CENTER" contentDisplay="CENTER" prefHeight="29.0" prefWidth="200.0" text=" "
+                textAlignment="CENTER" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"
+                AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0"/>
+      </AnchorPane>
+   </top>
 </BorderPane>

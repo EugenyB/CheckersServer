@@ -16,7 +16,7 @@ public class CheckersClientApp extends Application {
     @Override
     public void start(Stage primaryStage) throws IOException {
         FXMLLoader loader = new FXMLLoader(CheckersClientApp.class.getResource("checkers.fxml"));
-        Scene scene = new Scene(loader.load(), 521, 665);
+        Scene scene = new Scene(loader.load(), 521, 695);
         primaryStage.setTitle("Chinese checkers");
         primaryStage.setScene(scene);
         primaryStage.show();

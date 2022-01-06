@@ -31,6 +31,7 @@ public class Player implements Runnable {
             process();
         }
         out.println("exiting");
+        Main.getInstance().sendExit(this);
         System.out.println("exiting");
         try {
             socket.close();
@@ -47,7 +48,10 @@ public class Player implements Runnable {
             if (str.isBlank()) finished = true;
         } catch (IOException e) {
             finished = true;
-            e.printStackTrace();
+            // todo deal with exit of player
+            if (e.getMessage().contains("Connection reset")) {
+                System.out.println("Player is gone");
+            }
         }
     }
 

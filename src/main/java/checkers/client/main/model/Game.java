@@ -1,6 +1,7 @@
 package checkers.client.main.model;
 
 import checkers.client.main.Piece;
+import checkers.client.main.controller.Controller;
 import checkers.client.main.model.moves.MoveType;
 import checkers.client.main.model.moves.OtherMove;
 import checkers.client.main.model.moves.StartMove;
@@ -28,27 +29,36 @@ public class Game {
     private State playerState;
     private Piece selectedPiece = null;
 
+    private MoveType lastValidMove = MoveType.IMPOSSIBLE;
 
     public MoveType isMoveValid(int startRow, int startCol, int endRow, int endCol) {
         // начальная клетка должна быть с фигурой цвета игрока, если нет - уходим...
         if (!COLORS[field[startRow][startCol]].equals(playerColor)) return MoveType.IMPOSSIBLE;
+        // если конечная клетка совпадает с начальной и предыдущий ход Jump, то это завершение прыжка
+        if (startRow == endRow && startCol == endCol && lastValidMove == MoveType.JUMP) return MoveType.END;
         // конечная клетка должна быть свободна, если нет - уходим...
         if (field[endRow][endCol]!=0) return MoveType.IMPOSSIBLE;
         // простой ход без прыжка
-        if (Math.abs(endRow-startRow)==1 && Math.abs(endCol - startCol) == 1) return MoveType.SIMPLE;
-        if (Math.abs(endCol-startCol)==2 && endRow==startRow) return MoveType.SIMPLE;
+        if (Math.abs(endRow-startRow)==1 && Math.abs(endCol - startCol) == 1 && lastValidMove != MoveType.JUMP) return MoveType.SIMPLE;
+        if (Math.abs(endCol-startCol)==2 && endRow==startRow && lastValidMove != MoveType.JUMP) return MoveType.SIMPLE;
         // прыжок
-        int midRow = (endRow+startRow)/2;
-        int midCol = (endCol+startCol)/2;
-        if (Math.abs(endRow-startRow)==2 && Math.abs(endCol - startCol) == 2 && isOccupied(field[midRow][midCol])) return MoveType.JUMP;
-        if (Math.abs(endCol-startCol)==4 && endRow==startRow && isOccupied(field[midRow][midCol])) return MoveType.JUMP;
+        if (lastValidMove!=MoveType.SIMPLE) {
+            int midRow = (endRow + startRow) / 2;
+            int midCol = (endCol + startCol) / 2;
+            if (Math.abs(endRow - startRow) == 2 && Math.abs(endCol - startCol) == 2 && isOccupied(field[midRow][midCol]))
+                return MoveType.JUMP;
+            if (Math.abs(endCol - startCol) == 4 && endRow == startRow && isOccupied(field[midRow][midCol]))
+                return MoveType.JUMP;
+        }
         return MoveType.IMPOSSIBLE;
     }
 
     public MoveType isMoveValid(Pair p) {
         if (selectedPiece == null) return MoveType.IMPOSSIBLE;
         if (p == null) return MoveType.IMPOSSIBLE;
-        return isMoveValid(selectedPiece.getRow(), selectedPiece.getColumn(), p.getI(), p.getJ());
+        MoveType move = isMoveValid(selectedPiece.getRow(), selectedPiece.getColumn(), p.getI(), p.getJ());
+        if (move != MoveType.IMPOSSIBLE) lastValidMove = move;
+        return move;
     }
 
     public void createField(String s) {
@@ -85,16 +95,14 @@ public class Game {
         Color colorToMove = Color.rgb(col / 0x100 / 0x100, col / 0x100 % 0x100, col % 0x100);
         if (colorToMove.equals(playerColor)) {
             playerState = new StartMove();
+            Controller.getInstance().setMoveState(true);
         } else {
             playerState = new OtherMove();
+            Controller.getInstance().setMoveState(false);
         }
     }
 
-    public void processTurn(String turn) {
-        // todo create process turn
-    }
-
-    public void processGameOver() {
+    public void processGameOver(String line) {
         // todo process game over
     }
 
@@ -112,12 +120,25 @@ public class Game {
     }
 
     public void simpleMovePiece(Pair p) {
+        movePiece(p);
+        endMove(p);
+    }
+
+    public void jumpMovePiece(Pair p) {
+        movePiece(p);
+    }
+
+    private void movePiece(Pair p) {
         int color = field[selectedPiece.getRow()][selectedPiece.getColumn()];
         field[selectedPiece.getRow()][selectedPiece.getColumn()] = 0;
         selectedPiece.setRow(p.getI());
         selectedPiece.setColumn(p.getJ());
         field[selectedPiece.getRow()][selectedPiece.getColumn()] = color;
         selectedPiece.setSelected(false);
+    }
+
+    public void endMove(Pair p) {
         selectedPiece = null;
+        lastValidMove = MoveType.END;
     }
 }

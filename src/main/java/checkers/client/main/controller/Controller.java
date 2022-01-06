@@ -1,13 +1,17 @@
 package checkers.client.main.controller;
 
+import checkers.client.main.CheckersClientApp;
 import checkers.client.main.Piece;
 import checkers.client.main.model.Game;
 import checkers.client.main.model.moves.*;
 import checkers.client.main.util.Pair;
+import checkers.server.main.Player;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
@@ -15,6 +19,7 @@ import javafx.scene.paint.Color;
 import java.io.*;
 import java.net.Socket;
 import java.util.Optional;
+import java.util.Properties;
 
 import static checkers.client.main.GameConstants.IMPOSSIBLE;
 
@@ -36,6 +41,7 @@ public class Controller {
 
     @FXML private Canvas canvas;
     @FXML private Pane pane;
+    @FXML private Label moveIndicator;
 
     public Controller() {
     }
@@ -57,8 +63,10 @@ public class Controller {
             canvas.heightProperty().addListener(((observable, oldValue, newValue) -> draw()));
 
             connection = new Connection(in, out, game);
-            new Thread(connection).start();
-
+//            new Thread(connection).start();
+            Thread thread = new Thread(connection);
+            thread.setDaemon(true);
+            thread.start();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -74,8 +82,12 @@ public class Controller {
     }
 
     private void connectToServer() {
-        try {
-            Socket socket = new Socket("localhost", 12345);
+        try (BufferedReader reader = new BufferedReader(new FileReader("checkers.props"))){
+            Properties props = new Properties();
+            props.load(reader);
+            String host = props.getProperty("server", "localhost");
+            String port = props.getProperty("serverport", "12345");
+            Socket socket = new Socket(host, Integer.parseInt(port));
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
         } catch (IOException e) {
@@ -152,9 +164,13 @@ public class Controller {
                 }
                 else if (type == MoveType.JUMP) {
                     Piece sp = game.getSelectedPiece();
-                    String moveLine = String.format("Simple(%d,%d,%d,%d)", sp.getRow(), sp.getColumn(), p.getI(), p.getJ());
-                    game.simpleMovePiece(p); // todo предусмотреть, чтобы ход не передавался сразу
+                    String moveLine = String.format("Jump(%d,%d,%d,%d)", sp.getRow(), sp.getColumn(), p.getI(), p.getJ());
+                    game.jumpMovePiece(p);
                     connection.send(moveLine);
+                } else if (type == MoveType.END) {
+                    //Piece sp = game.getSelectedPiece();
+                    game.endMove(p);
+                    connection.send("End");
                 }
                 draw();
             }
@@ -179,5 +195,9 @@ public class Controller {
             }
         }
         return null;
+    }
+
+    public void setMoveState(boolean state) {
+        Platform.runLater(()->moveIndicator.setText(state ? "Your turn!" : " "));
     }
 }
