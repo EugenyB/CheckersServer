@@ -3,6 +3,12 @@ package checkers.client.main;
 import javafx.scene.paint.Color;
 
 public class GameConstants {
+    public static final String FIELD = "Field:";
+    public static final String MOVE = "Move:";
+    public static final String WINNER = "Winner:";
+    public static final String WELCOME = "welcome";
+    public static final String SORRY = "sorry";
+
     public static final int IMPOSSIBLE = 9;
 
     public static final int H = 17;

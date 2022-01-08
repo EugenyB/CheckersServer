@@ -22,6 +22,7 @@ public class Main {
     private Color[] colors;
     private int playerToMove;
     private MoveType lastMove = MoveType.IMPOSSIBLE;
+    private int gameWinner = 0;
 
     private ServerSocket serverSocket;
 
@@ -79,25 +80,34 @@ public class Main {
             waitForPlayer();
             //connectedPlayers++;
         }
+        new DummyThread(serverSocket).start();
         System.out.println("Starting!");
         for (Player player : players) {
-            //player.sendField(field);
             new Thread(player).start();
         }
         Random random = new Random();
         // todo in final version uncomment this
         //playerToMove = random.nextInt(players.size());
         playerToMove = 0;
-        while (true) {
+        boolean gameInProgress = true;
+        while (gameInProgress) {
             broadcastMove();
             synchronized (this) {
                 try {
                     wait();
-                    processMove();
+                    gameInProgress = processMove();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
+        }
+        broadcastGameOver();
+    }
+
+    private synchronized void broadcastGameOver() {
+        for (Player player : players) {
+            player.updateField(field);
+            player.sendMessage(WINNER + colors[gameWinner-1]);
         }
     }
 
@@ -127,28 +137,82 @@ public class Main {
         field[fromRow][fromColumn] = 0;
     }
 
-    public void processMove() {
+    public boolean processMove() {
         // todo change with program logic
         int winner = checkIfOneWinGame();
         if (winner == 0) {
             if (lastMove == MoveType.SIMPLE) playerToMove++;
             if (playerToMove >= players.size()) playerToMove = 0;
+            return true;
         } else {
             gameOver(winner);
+            return false;
         }
     }
 
     private void gameOver(int winner) {
         // todo player with num==winner is winner - send to all and finish
+        gameWinner = winner;
     }
 
     private int checkIfOneWinGame() {
+        if (firstWinGame()) return 1;
+        if (secondWinGame()) return 2;
+        if (thirdWinGame()) return 3;
+        if (fourthWinGame()) return 4;
+        if (fifthWinGame()) return 5;
+        if (sixthWinGame()) return 6;
         return 0;
     }
 
-    private void broadcastMove() {
+    private boolean firstWinGame() {
+//        return field[5][9] == 1;
+        return field[16][12] == 1 &&
+                field[15][11] == 1 && field[15][13] == 1 &&
+                field[14][10] == 1 && field[14][12] == 1 && field[14][14] == 1 &&
+                field[13][9] == 1 && field[13][11] == 1 && field[13][13] == 1 && field[13][15] == 1;
+    }
+
+    private boolean secondWinGame() {
+        return field[0][12] == 2 &&
+                field[1][11] == 2 && field[1][13] == 2 &&
+                field[2][10] == 2 && field[2][12] == 2 && field[2][14] == 2 &&
+                field[3][9] == 2 && field[3][11] == 2 && field[3][13] == 2 && field[3][15] == 2;
+    }
+
+    private boolean thirdWinGame() {
+        return field[7][21] == 3 &&
+                field[6][20] == 3 && field[6][22] == 3 &&
+                field[5][19] == 3 && field[5][21] == 3 && field[5][23] == 3 &&
+                field[4][18] == 3 && field[4][20] == 3 && field[4][22] == 3 && field[4][24] == 3;
+    }
+
+    private boolean fourthWinGame() {
+        return field[7][3] == 4 &&
+                field[6][2] == 4 && field[6][4] == 4 &&
+                field[5][1] == 4 && field[5][3] == 4 && field[5][5] == 4 &&
+                field[4][0] == 4 && field[4][2] == 4 && field[4][4] == 4 && field[4][6] == 4;
+    }
+
+    private boolean fifthWinGame() {
+        return field[9][21] == 5 &&
+                field[10][20] == 5 && field[10][22] == 5 &&
+                field[11][19] == 5 && field[11][21] == 5 && field[11][23] == 5 &&
+                field[12][18] == 5 && field[12][20] == 5 && field[12][22] == 5 && field[12][24] == 5;
+    }
+
+
+    private boolean sixthWinGame() {
+        return field[9][3] == 6 &&
+                field[10][2] == 6 && field[10][4] == 6 &&
+                field[11][1] == 6 && field[11][3] == 6 && field[11][5] == 6 &&
+                field[12][0] == 6 && field[12][2] == 6 && field[12][4] == 6 && field[12][6] == 6;
+    }
+
+
+    private synchronized void broadcastMove() {
         for (Player player : players) {
-            player.sendMessage("Move:"+colors[playerToMove]);
+            player.sendMessage(MOVE+colors[playerToMove]);
             player.updateField(field);
         }
     }
@@ -157,6 +221,7 @@ public class Main {
         try {
             Socket socket = serverSocket.accept();
             Player player = new Player(socket, colors[connectedPlayers++]);
+            player.sendMessage(WELCOME);
             player.sendField(field);
             players.add(player);
         } catch (IOException e) {
@@ -192,91 +257,85 @@ public class Main {
     }
 
     private void fillForSix() {
+        fillFieldForPlayer1();
+        fillFieldForPlayer2();
+
+        fillFieldForPlayer3();
+        fillFieldForPlayer4();
+
+        fillFieldForPlayer5();
+        fillFieldForPlayer6();
+    }
+
+    private void fillForFour() {
+        fillFieldForPlayer1();
+        fillFieldForPlayer2();
+
+        fillFieldForPlayer4();
+        fillFieldForPlayer5();
+    }
+
+    private void fillForThree() {
+        fillFieldForPlayer1();
+
+        fillFieldForPlayer3();
+        fillFieldForPlayer4();
+
+        fillEmptyPart();
+    }
+
+    private void fillForTwo() {
+        fillFieldForPlayer1();
+        fillFieldForPlayer2();
+    }
+
+    private void fillFieldForPlayer1() {
         field[0][12] = 1;
         field[1][11] = field[1][13] = 1;
         field[2][10] = field[2][12] = field[2][14] = 1;
         field[3][9] = field[3][11] = field[3][13] = field[3][15] = 1;
+    }
 
+    private void fillFieldForPlayer2() {
         field[16][12] = 2;
         field[15][11] = field[15][13] = 2;
         field[14][10] = field[14][12] = field[14][14] = 2;
         field[13][9] = field[13][11] = field[13][13] = field[13][15] = 2;
+    }
 
+    private void fillFieldForPlayer3() {
         field[9][3] = 3;
         field[10][2] = field[10][4] = 3;
         field[11][1] = field[11][3] = field[11][5] = 3;
         field[12][0] = field[12][2] = field[12][4] = field[12][6] = 3;
+    }
 
+    private void fillFieldForPlayer4() {
         field[9][21] = 4;
         field[10][20] = field[10][22] = 4;
         field[11][19] = field[11][21] = field[11][23] = 4;
         field[12][18] = field[12][20] = field[12][22] = field[12][24] = 4;
+    }
 
+    private void fillFieldForPlayer5() {
         field[7][3] = 5;
         field[6][2] = field[6][4] = 5;
         field[5][1] = field[5][3] = field[5][5] = 5;
         field[4][0] = field[4][2] = field[4][4] = field[4][6] = 5;
+    }
 
+    private void fillFieldForPlayer6() {
         field[7][21] = 6;
         field[6][20] = field[6][22] = 6;
         field[5][19] = field[5][21] = field[5][23] = 6;
         field[4][18] = field[4][20] = field[4][22] = field[4][24] = 6;
     }
 
-    private void fillForFour() {
-        field[0][12] = 1;
-        field[1][11] = field[1][13] = 1;
-        field[2][10] = field[2][12] = field[2][14] = 1;
-        field[3][9] = field[3][11] = field[3][13] = field[3][15] = 1;
-
-        field[16][12] = 2;
-        field[15][11] = field[15][13] = 2;
-        field[14][10] = field[14][12] = field[14][14] = 2;
-        field[13][9] = field[13][11] = field[13][13] = field[13][15] = 2;
-
-        field[7][3] = 5;
-        field[6][2] = field[6][4] = 5;
-        field[5][1] = field[5][3] = field[5][5] = 5;
-        field[4][0] = field[4][2] = field[4][4] = field[4][6] = 5;
-
-        field[9][21] = 4;
-        field[10][20] = field[10][22] = 4;
-        field[11][19] = field[11][21] = field[11][23] = 4;
-        field[12][18] = field[12][20] = field[12][22] = field[12][24] = 4;
-    }
-
-    private void fillForThree() {
-        field[0][12] = 1;
-        field[1][11] = field[1][13] = 1;
-        field[2][10] = field[2][12] = field[2][14] = 1;
-        field[3][9] = field[3][11] = field[3][13] = field[3][15] = 1;
-
-        field[9][3] = 3;
-        field[10][2] = field[10][4] = 3;
-        field[11][1] = field[11][3] = field[11][5] = 3;
-        field[12][0] = field[12][2] = field[12][4] = field[12][6] = 3;
-
-        field[9][21] = 4;
-        field[10][20] = field[10][22] = 4;
-        field[11][19] = field[11][21] = field[11][23] = 4;
-        field[12][18] = field[12][20] = field[12][22] = field[12][24] = 4;
-
+    private void fillEmptyPart() {
         field[16][12] = 0;
         field[15][11] = field[15][13] = 0;
         field[14][10] = field[14][12] = field[14][14] = 0;
         field[13][9] = field[13][11] = field[13][13] = field[13][15] = 0;
-    }
-
-    private void fillForTwo() {
-        field[0][12] = 1;
-        field[1][11] = field[1][13] = 1;
-        field[2][10] = field[2][12] = field[2][14] = 1;
-        field[3][9] = field[3][11] = field[3][13] = field[3][15] = 1;
-
-        field[16][12] = 2;
-        field[15][11] = field[15][13] = 2;
-        field[14][10] = field[14][12] = field[14][14] = 2;
-        field[13][9] = field[13][11] = field[13][13] = field[13][15] = 2;
     }
 
     public synchronized void sendExit(Player player) {

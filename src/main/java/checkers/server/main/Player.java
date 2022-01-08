@@ -5,6 +5,8 @@ import javafx.scene.paint.Color;
 import java.io.*;
 import java.net.Socket;
 
+import static checkers.client.main.GameConstants.FIELD;
+
 public class Player implements Runnable {
     private Socket socket;
     private Color color;
@@ -16,6 +18,10 @@ public class Player implements Runnable {
         this.socket = socket;
         this.color = color;
         System.out.println(color);
+        createInOut(socket);
+    }
+
+    private void createInOut(Socket socket) {
         try {
             out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -67,7 +73,7 @@ public class Player implements Runnable {
     }
 
     public void updateField(int[][] field) {
-        StringBuilder buf = new StringBuilder("Field:");
+        StringBuilder buf = new StringBuilder(FIELD);
         for (int i = 0; i < field.length; i++) {
             for (int j = 0; j < field[i].length; j++) {
                 buf.append(field[i][j]);

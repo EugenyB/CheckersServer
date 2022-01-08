@@ -1,13 +1,15 @@
 package checkers.client.main.controller;
 
 import checkers.client.main.model.Game;
-import javafx.application.Platform;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+import static checkers.client.main.GameConstants.*;
+
 public class Connection implements Runnable {
+
     private final BufferedReader in;
     private final PrintWriter out;
     private final Game game;
@@ -23,12 +25,12 @@ public class Connection implements Runnable {
         try {
             while (true) {
                 String line = in.readLine();
-                if (line.startsWith("Field:")) {
-                    game.updateField(line.substring("Field:".length()));
-                } else if (line.startsWith("Move:")) {
-                    game.processChangeMove(line.substring(5));
-                } else if (line.startsWith("End")) {
-                    game.processGameOver(line);
+                if (line.startsWith(FIELD)) {
+                    game.updateField(line.substring(FIELD.length()));
+                } else if (line.startsWith(MOVE)) {
+                    game.processChangeMove(line.substring(MOVE.length()));
+                } else if (line.startsWith(WINNER)) {
+                    game.processGameOver(line.substring(WINNER.length()));
                     in.close();
                     out.close();
                     break;
@@ -39,10 +41,6 @@ public class Connection implements Runnable {
             e.printStackTrace();
         }
     }
-//
-//    private boolean isGameProceed(String line) {
-//        return true;
-//    }
 
     public void send(String line) {
         out.println(line);

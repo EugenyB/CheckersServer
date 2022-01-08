@@ -1,5 +1,6 @@
 package checkers.client.main;
 
+import checkers.client.main.util.GameParameters;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -19,6 +20,7 @@ public class CheckersClientApp extends Application {
         Scene scene = new Scene(loader.load(), 521, 695);
         primaryStage.setTitle("Chinese checkers");
         primaryStage.setScene(scene);
+        GameParameters.getInstance().setStage(primaryStage);
         primaryStage.show();
     }
 }

@@ -1,11 +1,10 @@
 package checkers.client.main.controller;
 
-import checkers.client.main.CheckersClientApp;
 import checkers.client.main.Piece;
 import checkers.client.main.model.Game;
 import checkers.client.main.model.moves.*;
+import checkers.client.main.util.GameParameters;
 import checkers.client.main.util.Pair;
-import checkers.server.main.Player;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
@@ -18,10 +17,10 @@ import javafx.scene.paint.Color;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.Optional;
 import java.util.Properties;
 
 import static checkers.client.main.GameConstants.IMPOSSIBLE;
+import static checkers.client.main.GameConstants.SORRY;
 
 public class Controller {
     public final static int SIZE = 40;
@@ -55,6 +54,14 @@ public class Controller {
         try {
             connectToServer();
             game = new Game();
+            String line = game.readWelcome(in.readLine());
+            if (SORRY.equals(line)) {
+                Alert alert = new Alert(Alert.AlertType.ERROR, "Come again later!");
+                alert.setTitle("Sorry");
+                alert.setHeaderText("Game already started!");
+                alert.showAndWait();
+                System.exit(2);
+            }
             game.createField(in.readLine());
 
             canvas.widthProperty().bind(pane.widthProperty());
@@ -72,15 +79,6 @@ public class Controller {
         }
     }
 
-    private void printField(int[][] field) {
-        for (int i = 0; i < field.length; i++) {
-            for (int j = 0; j < field[i].length; j++) {
-                System.out.print(field[i][j]);
-            }
-            System.out.println();
-        }
-    }
-
     private void connectToServer() {
         try (BufferedReader reader = new BufferedReader(new FileReader("checkers.props"))){
             Properties props = new Properties();
@@ -91,7 +89,12 @@ public class Controller {
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
         } catch (IOException e) {
-            e.printStackTrace();
+            Alert alert = new Alert(Alert.AlertType.ERROR, "Please, restart and reconnect");
+            alert.setTitle("Connection refused");
+            alert.setHeaderText("Server not found, or wrong configured");
+            alert.showAndWait();
+            System.exit(1);
+            //e.printStackTrace();
         }
     }
 
@@ -134,54 +137,9 @@ public class Controller {
         double x = e.getX();
         double y = e.getY();
         Pair p = findCell(x,y);
-        if (game.getPlayerState().getClass() == StartMove.class) {
-            if (p != null) {
-                Optional<Piece> f = game.findPiece(p);
-                if (f.isEmpty()) {
-                    System.out.println("none");
-                } else {
-                    if (f.get().getColor().equals(game.getPlayerColor())) {
-                        System.out.println("ok");
-                        Piece piece = f.get();
-                        select(piece);
-                        game.setPlayerState(game.getPlayerState().select(p));
-                        //connection.send(String.format("Start(%d,%d)", p.getI(), p.getJ()));
-                        draw();
-                    } else {
-                        System.out.println("err");
-                    }
-                }
-            }
-        } else if (game.getPlayerState().getClass() == ProcessMove.class) {
-            if (p!=null) {
-                MoveType type = game.isMoveValid(p);
-                //System.out.println(valid);
-                if (type == MoveType.SIMPLE) {
-                    Piece sp = game.getSelectedPiece();
-                    String moveLine = String.format("Simple(%d,%d,%d,%d)", sp.getRow(), sp.getColumn(), p.getI(), p.getJ());
-                    game.simpleMovePiece(p);
-                    connection.send(moveLine);
-                }
-                else if (type == MoveType.JUMP) {
-                    Piece sp = game.getSelectedPiece();
-                    String moveLine = String.format("Jump(%d,%d,%d,%d)", sp.getRow(), sp.getColumn(), p.getI(), p.getJ());
-                    game.jumpMovePiece(p);
-                    connection.send(moveLine);
-                } else if (type == MoveType.END) {
-                    //Piece sp = game.getSelectedPiece();
-                    game.endMove(p);
-                    connection.send("End");
-                }
-                draw();
-            }
-        }
-    }
-
-    private void select(Piece piece) {
-        for (Piece p : game.getPieces()) {
-            p.setSelected(p.equals(piece));
-        }
-        game.setSelectedPiece(piece);
+        game.processPair(p, connection);
+//        game.getPlayerState().processPair(p, game, connection);
+        draw();
     }
 
     private Pair findCell(double x, double y) {
@@ -199,5 +157,26 @@ public class Controller {
 
     public void setMoveState(boolean state) {
         Platform.runLater(()->moveIndicator.setText(state ? "Your turn!" : " "));
+    }
+
+    public void showWin() {
+        Platform.runLater(()->{
+            moveIndicator.setText("You are the Winner!");
+            Alert alert = new Alert(Alert.AlertType.INFORMATION, "Congrats!");
+            alert.setHeaderText(null);
+            alert.setX(GameParameters.getInstance().getX());
+            alert.setY(GameParameters.getInstance().getY());
+            alert.showAndWait();
+        });
+    }
+
+    public void showLose() {
+        Platform.runLater(()-> {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION, "Sorry you are loose");
+            alert.setHeaderText(null);
+            alert.setX(GameParameters.getInstance().getX());
+            alert.setY(GameParameters.getInstance().getY());
+            alert.showAndWait();
+        });
     }
 }

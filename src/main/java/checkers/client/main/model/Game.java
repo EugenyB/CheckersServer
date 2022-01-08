@@ -1,6 +1,7 @@
 package checkers.client.main.model;
 
 import checkers.client.main.Piece;
+import checkers.client.main.controller.Connection;
 import checkers.client.main.controller.Controller;
 import checkers.client.main.model.moves.MoveType;
 import checkers.client.main.model.moves.OtherMove;
@@ -62,23 +63,27 @@ public class Game {
     }
 
     public void createField(String s) {
-            field = new int[H][W];
-            int k = 0;
-            pieces.clear();
-            for (int i = 0; i < H; i++) {
-                for (int j = 0; j < W; j++) {
-                    field[i][j] = s.charAt(k++) - '0';
-                    if (field[i][j] > 0 && field[i][j] < 9) {
-                        pieces.add(new Piece(i, j, field[i][j]));
-                    }
+        fillField(s);
+        //updateField(s);
+        // Color 0xff0000ff
+        String tail = s.substring(H * W + 2, H * W + 8);
+        field[0][0] = Integer.parseInt(tail, 16);
+        int col = field[0][0];
+        playerColor = Color.rgb(col / 0x100 / 0x100, col / 0x100 % 0x100, col % 0x100); // ff 00 ff 0x100
+    }
+
+    public void fillField(String s) {
+        field = new int[H][W];
+        int k = 0;
+        pieces.clear();
+        for (int i = 0; i < H; i++) {
+            for (int j = 0; j < W; j++) {
+                field[i][j] = s.charAt(k++) - '0';
+                if (field[i][j] > 0 && field[i][j] < 9) {
+                    pieces.add(new Piece(i, j, field[i][j]));
                 }
             }
-        //updateField(s);
-            // Color 0xff0000ff
-            String tail = s.substring(H*W+2, H*W+8);
-            field[0][0] = Integer.parseInt(tail,16);
-            int col = field[0][0];
-            playerColor = Color.rgb(col / 0x100 / 0x100, col / 0x100 % 0x100, col % 0x100); // ff 00 ff 0x100
+        }
         playerState = new OtherMove();
     }
 
@@ -94,7 +99,9 @@ public class Game {
         int col = Integer.parseInt(colorTxt.substring(2, 8), 16);
         Color colorToMove = Color.rgb(col / 0x100 / 0x100, col / 0x100 % 0x100, col % 0x100);
         if (colorToMove.equals(playerColor)) {
-            playerState = new StartMove();
+            if (lastValidMove != MoveType.JUMP) {
+                playerState = new StartMove();
+            }
             Controller.getInstance().setMoveState(true);
         } else {
             playerState = new OtherMove();
@@ -102,8 +109,14 @@ public class Game {
         }
     }
 
-    public void processGameOver(String line) {
-        // todo process game over
+    public void processGameOver(String colorTxt) {
+        int col = Integer.parseInt(colorTxt.substring(2, 8), 16);
+        Color winnerColor = Color.rgb(col / 0x100 / 0x100, col / 0x100 % 0x100, col % 0x100);
+        if (winnerColor.equals(playerColor)) {
+            Controller.getInstance().showWin();
+        } else {
+            Controller.getInstance().showLose();
+        }
     }
 
     public void updateField(String s) {
@@ -126,6 +139,7 @@ public class Game {
 
     public void jumpMovePiece(Pair p) {
         movePiece(p);
+        selectedPiece.setSelected(true);
     }
 
     private void movePiece(Pair p) {
@@ -140,5 +154,60 @@ public class Game {
     public void endMove(Pair p) {
         selectedPiece = null;
         lastValidMove = MoveType.END;
+    }
+
+    public String readWelcome(String line) {
+        return line.trim().toLowerCase();
+    }
+
+    public void makeMove(Pair p, Connection connection) {
+        if (p !=null) {
+            MoveType type = isMoveValid(p);
+            //System.out.println(valid);
+            if (type == MoveType.SIMPLE) {
+                Piece sp = getSelectedPiece();
+                String moveLine = String.format("Simple(%d,%d,%d,%d)", sp.getRow(), sp.getColumn(), p.getI(), p.getJ());
+                simpleMovePiece(p);
+                connection.send(moveLine);
+            }
+            else if (type == MoveType.JUMP) {
+                Piece sp = getSelectedPiece();
+                String moveLine = String.format("Jump(%d,%d,%d,%d)", sp.getRow(), sp.getColumn(), p.getI(), p.getJ());
+                jumpMovePiece(p);
+                connection.send(moveLine);
+            } else if (type == MoveType.END) {
+                endMove(p);
+                connection.send("End");
+            }
+        }
+    }
+
+   public void startMove(Pair p) {
+        if (p != null) {
+            Optional<Piece> f = findPiece(p);
+            if (f.isEmpty()) {
+                System.out.println("none");
+            } else {
+                if (f.get().getColor().equals(getPlayerColor())) {
+                    System.out.println("ok");
+                    Piece piece = f.get();
+                    select(piece);
+                    setPlayerState(getPlayerState().select(p));
+                } else {
+                    System.out.println("err");
+                }
+            }
+        }
+    }
+
+    private void select(Piece piece) {
+        for (Piece p : getPieces()) {
+            p.setSelected(p.equals(piece));
+        }
+        setSelectedPiece(piece);
+    }
+
+    public void processPair(Pair p, Connection connection) {
+        playerState.processPair(this, p, connection);
     }
 }
