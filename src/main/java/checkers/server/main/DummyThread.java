@@ -5,8 +5,11 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-import static checkers.client.main.GameConstants.SORRY;
+import static checkers.GameConstants.SORRY;
 
+/**
+ * Utility thread for players that are late
+ */
 public class DummyThread extends Thread {
     private ServerSocket ss;
 
@@ -15,6 +18,10 @@ public class DummyThread extends Thread {
         setDaemon(true);
     }
 
+    /**
+     * run method for dummy thread.
+     * After player connected - send "sorry" to him, and disconnect
+     */
     @Override
     public void run() {
         while (true) {

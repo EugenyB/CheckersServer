@@ -5,7 +5,7 @@ import lombok.Data;
 
 import java.util.Objects;
 
-import static checkers.client.main.GameConstants.COLORS;
+import static checkers.GameConstants.COLORS;
 
 @Data
 public class Piece {

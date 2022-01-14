@@ -19,36 +19,35 @@ import java.io.*;
 import java.net.Socket;
 import java.util.Properties;
 
-import static checkers.client.main.GameConstants.IMPOSSIBLE;
-import static checkers.client.main.GameConstants.SORRY;
+import static checkers.GameConstants.*;
 
 public class Controller {
     public final static int SIZE = 40;
-    int W = 25;
-    int H = 17;
-    private Color myColor;
-    private State state;
 
     private Game game;
 
-    private Socket socket;
     private BufferedReader in;
     private PrintWriter out;
     private Connection connection;
 
+    /**
+     * instance variable for reference from other objects
+     */
     private static Controller instance;
 
     @FXML private Canvas canvas;
     @FXML private Pane pane;
     @FXML private Label moveIndicator;
 
-    public Controller() {
-    }
 
     public static Controller getInstance() {
         return instance;
     }
 
+    /**
+     * Starting game. Check if free room for player - started.
+     * If no room for player - exits with Alert.
+     */
     public void initialize() {
         instance = this;
         try {
@@ -79,6 +78,10 @@ public class Controller {
         }
     }
 
+    /**
+     * Make server connection.
+     * Reads parameters from property file
+     */
     private void connectToServer() {
         try (BufferedReader reader = new BufferedReader(new FileReader("checkers.props"))){
             Properties props = new Properties();
@@ -98,6 +101,9 @@ public class Controller {
         }
     }
 
+    /**
+     * Draws game field
+     */
     public synchronized void draw() {
         GraphicsContext gc = canvas.getGraphicsContext2D();
         gc.setFill(Color.WHITESMOKE);
@@ -125,6 +131,11 @@ public class Controller {
         gc.fillRect(0, H * SIZE * Math.sqrt(3) / 2 + SIZE, canvas.getWidth(), SIZE);
     }
 
+    /**
+     * Process player's move.
+     * If not player's move - alert with this info
+     * @param e mouse event with coordinates of click
+     */
     public void processMove(MouseEvent e) {
         if (game.getPlayerState().getClass() == OtherMove.class) {
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
@@ -138,11 +149,16 @@ public class Controller {
         double y = e.getY();
         Pair p = findCell(x,y);
         game.processPair(p, connection);
-//        game.getPlayerState().processPair(p, game, connection);
         draw();
     }
 
-    private Pair findCell(double x, double y) {
+    /**
+     * Finds pair - coordinates of cell in field by mouse coordinates
+     * @param x X coordinate of mouse click
+     * @param y Y coordinate of mouse click
+     * @return pair with coordinates of cell or null if no cell in this position
+     */
+    Pair findCell(double x, double y) {
         for (int i = 0; i < H; i++) {
             for (int j = 0; j < W; j++) {
                 if ((i+j)%2 == 0 && game.getField()[i][j] < IMPOSSIBLE) {
@@ -155,10 +171,17 @@ public class Controller {
         return null;
     }
 
+    /**
+     * Shows turn indicator change
+     * @param state players state (can move or not)
+     */
     public void setMoveState(boolean state) {
         Platform.runLater(()->moveIndicator.setText(state ? "Your turn!" : " "));
     }
 
+    /**
+     * Shows Win of game
+     */
     public void showWin() {
         Platform.runLater(()->{
             moveIndicator.setText("You are the Winner!");
@@ -170,6 +193,9 @@ public class Controller {
         });
     }
 
+    /**
+     * Shows Loose of game
+     */
     public void showLose() {
         Platform.runLater(()-> {
             Alert alert = new Alert(Alert.AlertType.INFORMATION, "Sorry you are loose");

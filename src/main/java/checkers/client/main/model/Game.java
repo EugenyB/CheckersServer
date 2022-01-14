@@ -18,8 +18,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static checkers.client.main.GameConstants.*;
+import static checkers.GameConstants.*;
 
+/**
+ * Main class of Client App - contains game model
+ */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -32,6 +35,14 @@ public class Game {
 
     private MoveType lastValidMove = MoveType.IMPOSSIBLE;
 
+    /**
+     * Checks if move is valid
+     * @param startRow start row of move
+     * @param startCol start column of move
+     * @param endRow end row of move
+     * @param endCol end column of move
+     * @return type of Move - corresponding value of MoveType enum
+     */
     public MoveType isMoveValid(int startRow, int startCol, int endRow, int endCol) {
         // начальная клетка должна быть с фигурой цвета игрока, если нет - уходим...
         if (!COLORS[field[startRow][startCol]].equals(playerColor)) return MoveType.IMPOSSIBLE;
@@ -54,6 +65,11 @@ public class Game {
         return MoveType.IMPOSSIBLE;
     }
 
+    /**
+     * Check if move is valid. If position is valid - performs check with coordinates.
+     * @param p position of selection
+     * @return type of Move - corresponding value of MoveType enum
+     */
     public MoveType isMoveValid(Pair p) {
         if (selectedPiece == null) return MoveType.IMPOSSIBLE;
         if (p == null) return MoveType.IMPOSSIBLE;
@@ -62,6 +78,11 @@ public class Game {
         return move;
     }
 
+    /**
+     * Creating field from encoded string, received from server.
+     * Sets Player's pieces color.
+     * @param s encoded string
+     */
     public void createField(String s) {
         fillField(s);
         //updateField(s);
@@ -72,6 +93,10 @@ public class Game {
         playerColor = Color.rgb(col / 0x100 / 0x100, col / 0x100 % 0x100, col % 0x100); // ff 00 ff 0x100
     }
 
+    /**
+     * Fill field from encoded string
+     * @param s encoded string
+     */
     public void fillField(String s) {
         field = new int[H][W];
         int k = 0;
@@ -87,14 +112,28 @@ public class Game {
         playerState = new OtherMove();
     }
 
-    private boolean isOccupied(int cellValue) {
+    /**
+     * checks if cell is occupied or free
+     * @param cellValue value in cell
+     * @return true if cell is occupied
+     */
+    boolean isOccupied(int cellValue) {
         return cellValue > 0 && cellValue < IMPOSSIBLE;
     }
 
+    /**
+     * Finds piece with pair coordinates
+     * @param p pair of cell
+     * @return Optional, that contain found piece or empty Optional
+     */
     public Optional<Piece> findPiece(Pair p) {
         return pieces.stream().filter(f -> f.getRow() == p.getI() && f.getColumn() == p.getJ()).findFirst();
     }
 
+    /**
+     * Process last move of player and changes it's state
+     * @param colorTxt color of moving player
+     */
     public void processChangeMove(String colorTxt) {
         int col = Integer.parseInt(colorTxt.substring(2, 8), 16);
         Color colorToMove = Color.rgb(col / 0x100 / 0x100, col / 0x100 % 0x100, col % 0x100);
@@ -109,6 +148,10 @@ public class Game {
         }
     }
 
+    /**
+     * Handles game over info: Win or Loose
+     * @param colorTxt - color of winner in text format
+     */
     public void processGameOver(String colorTxt) {
         int col = Integer.parseInt(colorTxt.substring(2, 8), 16);
         Color winnerColor = Color.rgb(col / 0x100 / 0x100, col / 0x100 % 0x100, col % 0x100);
@@ -119,6 +162,10 @@ public class Game {
         }
     }
 
+    /**
+     * Updates field with encoded string from server
+     * @param s encoded string with field
+     */
     public void updateField(String s) {
         int k = 0;
         pieces.clear();
@@ -132,16 +179,28 @@ public class Game {
         }
     }
 
+    /**
+     * Performs simple move without jump
+     * @param p new cell for selected piece
+     */
     public void simpleMovePiece(Pair p) {
         movePiece(p);
         endMove(p);
     }
 
+    /**
+     * Performs jump move
+     * @param p new cell for selected piece
+     */
     public void jumpMovePiece(Pair p) {
         movePiece(p);
         selectedPiece.setSelected(true);
     }
 
+    /**
+     * moving selected piece
+     * @param p new position for selected piece
+     */
     private void movePiece(Pair p) {
         int color = field[selectedPiece.getRow()][selectedPiece.getColumn()];
         field[selectedPiece.getRow()][selectedPiece.getColumn()] = 0;
@@ -151,15 +210,29 @@ public class Game {
         selectedPiece.setSelected(false);
     }
 
+    /**
+     * ends move and sends move order to another player
+     * @param p finish position of moved piece
+     */
     public void endMove(Pair p) {
         selectedPiece = null;
         lastValidMove = MoveType.END;
     }
 
+    /**
+     * Reads Welcome message and trims it
+     * @param line welcome message
+     * @return
+     */
     public String readWelcome(String line) {
         return line.trim().toLowerCase();
     }
 
+    /**
+     * Performs move and sends to server info about it
+     * @param p new position of selection
+     * @param connection object that perform communications
+     */
     public void makeMove(Pair p, Connection connection) {
         if (p !=null) {
             MoveType type = isMoveValid(p);
@@ -182,7 +255,11 @@ public class Game {
         }
     }
 
-   public void startMove(Pair p) {
+    /**
+     * Starts move
+     * @param p position of selected cell
+     */
+    public void startMove(Pair p) {
         if (p != null) {
             Optional<Piece> f = findPiece(p);
             if (f.isEmpty()) {
@@ -200,6 +277,10 @@ public class Game {
         }
     }
 
+    /**
+     * Selects Piece
+     * @param piece piece that will be selected
+     */
     private void select(Piece piece) {
         for (Piece p : getPieces()) {
             p.setSelected(p.equals(piece));
@@ -207,6 +288,11 @@ public class Game {
         setSelectedPiece(piece);
     }
 
+    /**
+     * Handle pair with player state
+     * @param p pair of cell's coordinates
+     * @param connection object that perform communications
+     */
     public void processPair(Pair p, Connection connection) {
         playerState.processPair(this, p, connection);
     }

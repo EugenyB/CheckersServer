@@ -4,10 +4,12 @@ import checkers.client.main.controller.Connection;
 import checkers.client.main.model.Game;
 import checkers.client.main.util.Pair;
 
+/**
+ * Indicates that this player starting move now
+ */
 public class StartMove extends State {
     @Override
     public State select(Pair p) {
-        // todo set piece selected
         return new ProcessMove();
     }
 

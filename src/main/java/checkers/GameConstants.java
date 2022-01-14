@@ -1,7 +1,10 @@
-package checkers.client.main;
+package checkers;
 
 import javafx.scene.paint.Color;
 
+/**
+ * Constants used with server and clients
+ */
 public class GameConstants {
     public static final String FIELD = "Field:";
     public static final String MOVE = "Move:";

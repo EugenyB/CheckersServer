@@ -2,9 +2,15 @@ package checkers.client.main.util;
 
 import javafx.stage.Stage;
 
+/**
+ * Contains info of window on screen position. Singleton
+ */
 public class GameParameters {
     private static GameParameters instance;
 
+    /**
+     * Stage of game (Primary Stage of JavaFX App)
+     */
     private Stage stage;
 
     private GameParameters(){}
