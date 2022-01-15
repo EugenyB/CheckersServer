@@ -1,6 +1,6 @@
 package checkers.client.main.controller;
 
-import checkers.client.main.Piece;
+import checkers.client.main.model.Piece;
 import checkers.client.main.model.Game;
 import checkers.client.main.model.moves.*;
 import checkers.client.main.util.GameParameters;

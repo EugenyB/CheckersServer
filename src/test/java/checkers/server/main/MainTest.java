@@ -31,11 +31,11 @@ class MainTest {
         int[][] field = main.fillField(6);
         main.setField(field);
         String str = "Simple(13,9,12,10)";
-        assertEquals(2,field[13][9]);
-        assertEquals(0,field[12][10]);
+        assertEquals(2, field[13][9]);
+        assertEquals(0, field[12][10]);
         field = main.makeMove(str);
-        assertEquals(0,field[13][9]);
-        assertEquals(2,field[12][10]);
+        assertEquals(0, field[13][9]);
+        assertEquals(2, field[12][10]);
         str = "Jump(2,10,4,12)";
         assertEquals(1, field[2][10]);
         assertEquals(0, field[4][12]);
@@ -92,12 +92,27 @@ class MainTest {
         assertTrue(main.fourthWinGame(field));
     }
 
-    @Test @Disabled
+    @Test
     void fifthWinGame() {
+        int[][] field = main.fillField(6);
+        assertFalse(main.fifthWinGame(field));
+        field[9][21] = 5;
+        field[10][20] = field[10][22] = 5;
+        field[11][19] = field[11][21] = field[11][23] = 5;
+        assertFalse(main.fifthWinGame(field));
+        field[12][18] = field[12][20] = field[12][22] = field[12][24] = 5;
+        assertTrue(main.fifthWinGame(field));
     }
 
-    @Test @Disabled
+    @Test
     void sixthWinGame() {
+        int[][] field = main.fillField(6);
+        assertFalse(main.sixthWinGame(field));
+        field[9][3] = 6;
+        field[10][2] = field[10][4] = field[11][1] = field[11][3] = field[11][5] = 6;
+        assertFalse(main.sixthWinGame(field));
+        field[12][0] = field[12][2] = field[12][4] = field[12][6] = 6;
+        assertTrue(main.sixthWinGame(field));
     }
 
     @Test
@@ -105,7 +120,7 @@ class MainTest {
         int[][] field = main.fillField(2);
         for (int i = 0; i < H; i++) {
             for (int j = 0; j < W; j++) {
-                assertTrue(Set.of(0,1,2,9).contains(field[i][j]));
+                assertTrue(Set.of(0, 1, 2, 9).contains(field[i][j]));
             }
         }
 
@@ -113,7 +128,7 @@ class MainTest {
         for (int i = 0; i < H; i++) {
             for (int j = 0; j < W; j++) {
                 // 0 1 3 4 9
-                assertTrue(Set.of(0,1,3,4,9).contains(field[i][j]));
+                assertTrue(Set.of(0, 1, 3, 4, 9).contains(field[i][j]));
             }
         }
 
@@ -121,14 +136,14 @@ class MainTest {
         for (int i = 0; i < H; i++) {
             for (int j = 0; j < W; j++) {
                 // 0 1 2 4 5 9
-                assertTrue(Set.of(0,1,2,4,5,9).contains(field[i][j]));
+                assertTrue(Set.of(0, 1, 2, 4, 5, 9).contains(field[i][j]));
             }
         }
 
         field = main.fillField(6);
         for (int i = 0; i < H; i++) {
             for (int j = 0; j < W; j++) {
-                assertTrue(Set.of(0,1,2,3,4,5,6,9).contains(field[i][j]));
+                assertTrue(Set.of(0, 1, 2, 3, 4, 5, 6, 9).contains(field[i][j]));
             }
         }
     }
@@ -197,20 +212,72 @@ class MainTest {
         assertEquals(0, field[6][6]);
     }
 
-    @Test @Disabled
+    @Test
     void testFillFieldForPlayer4() {
-    }
+        int[][] field = new int[H][W];
+        main.fillFieldForPlayer4(field);
+        for (int i = 0; i < H; i++) {
+            for (int j = 0; j < W; j++) {
+                assertTrue(field[i][j] == 0 || field[i][j] == 4);
+            }
+            assertEquals(4, field[9][21]);
+            assertEquals(4, field[10][20]);
+            assertEquals(4, field[10][22]);
+            assertEquals(4, field[11][19]);
+            assertEquals(4, field[11][21]);
+            assertEquals(4, field[11][23]);
+            assertEquals(4, field[12][18]);
+            assertEquals(4, field[12][20]);
+            assertEquals(4, field[12][22]);
+            assertEquals(4, field[12][24]);
 
-    @Test @Disabled
-    void testFillFieldForPlayer5() {
-    }
-
-    @Test @Disabled
-    void testFillFieldForPlayer6() {
+        }
     }
 
     @Test
-    void testFillEmptyPart() {
+    void testFillFieldForPlayer5() {
+        int[][] field = new int[H][W];
+        main.fillFieldForPlayer5(field);
+        for (int i = 0; i < H; i++) {
+            for (int j = 0; j < W; j++) {
+                assertTrue(field[i][j] == 0 || field[i][j] == 5);
+            }
+            assertEquals(5, field[7][3]);
+            assertEquals(5, field[6][2]);
+            assertEquals(5, field[6][4]);
+            assertEquals(5, field[5][1]);
+            assertEquals(5, field[5][3]);
+            assertEquals(5, field[5][5]);
+            assertEquals(5, field[4][0]);
+            assertEquals(5, field[4][2]);
+            assertEquals(5, field[4][4]);
+            assertEquals(5, field[4][6]);
+        }
+    }
+
+    @Test
+    void testFillFieldForPlayer6 () {
+        int[][] field = new int[H][W];
+        main.fillFieldForPlayer6(field);
+        for (int i = 0; i < H; i++) {
+            for (int j = 0; j < W; j++) {
+                assertTrue(field[i][j] == 0 || field[i][j] == 6);
+            }
+            assertEquals(6,field[7][21]);
+            assertEquals(6,field[6][20]);
+            assertEquals(6,field[6][20]);
+            assertEquals(6,field[5][19]);
+            assertEquals(6,field[5][21]);
+            assertEquals(6,field[5][23]);
+            assertEquals(6,field[4][18]);
+            assertEquals(6,field[4][20]);
+            assertEquals(6,field[4][22]);
+            assertEquals(6,field[4][24]);
+        }
+    }
+
+    @Test
+    void testFillEmptyPart () {
         int[][] field = new int[H][W];
         //main.fillFieldForPlayer2(field);
         for (int i = 0; i < H; i++) {
@@ -231,3 +298,5 @@ class MainTest {
         assertEquals(0, field[13][15]);
     }
 }
+
+

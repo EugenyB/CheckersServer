@@ -1,6 +1,5 @@
 package checkers.client.main.model;
 
-import checkers.client.main.Piece;
 import checkers.client.main.controller.Connection;
 import checkers.client.main.controller.Controller;
 import checkers.client.main.model.moves.MoveType;
@@ -104,7 +103,7 @@ public class Game {
         for (int i = 0; i < H; i++) {
             for (int j = 0; j < W; j++) {
                 field[i][j] = s.charAt(k++) - '0';
-                if (field[i][j] > 0 && field[i][j] < 9) {
+                if (isOccupied(field[i][j])) {
                     pieces.add(new Piece(i, j, field[i][j]));
                 }
             }
@@ -118,7 +117,7 @@ public class Game {
      * @return true if cell is occupied
      */
     boolean isOccupied(int cellValue) {
-        return cellValue > 0 && cellValue < IMPOSSIBLE;
+        return cellValue > 0 && cellValue < 7;
     }
 
     /**
@@ -201,7 +200,7 @@ public class Game {
      * moving selected piece
      * @param p new position for selected piece
      */
-    private void movePiece(Pair p) {
+    public void movePiece(Pair p) {
         int color = field[selectedPiece.getRow()][selectedPiece.getColumn()];
         field[selectedPiece.getRow()][selectedPiece.getColumn()] = 0;
         selectedPiece.setRow(p.getI());
@@ -222,7 +221,7 @@ public class Game {
     /**
      * Reads Welcome message and trims it
      * @param line welcome message
-     * @return
+     * @return lowercased string
      */
     public String readWelcome(String line) {
         return line.trim().toLowerCase();
@@ -235,24 +234,37 @@ public class Game {
      */
     public void makeMove(Pair p, Connection connection) {
         if (p !=null) {
-            MoveType type = isMoveValid(p);
-            //System.out.println(valid);
-            if (type == MoveType.SIMPLE) {
-                Piece sp = getSelectedPiece();
-                String moveLine = String.format("Simple(%d,%d,%d,%d)", sp.getRow(), sp.getColumn(), p.getI(), p.getJ());
-                simpleMovePiece(p);
-                connection.send(moveLine);
-            }
-            else if (type == MoveType.JUMP) {
-                Piece sp = getSelectedPiece();
-                String moveLine = String.format("Jump(%d,%d,%d,%d)", sp.getRow(), sp.getColumn(), p.getI(), p.getJ());
-                jumpMovePiece(p);
-                connection.send(moveLine);
-            } else if (type == MoveType.END) {
-                endMove(p);
-                connection.send("End");
-            }
+            String moveLine = createMoveLine(p);
+            if (!moveLine.isEmpty()) connection.send(moveLine);
         }
+    }
+
+    /**
+     * Create moveLine for new position of selection
+     * @param p new position of selection
+     * @return moveLine for send to server
+     */
+    public String createMoveLine(Pair p) {
+        MoveType type = isMoveValid(p);
+        //System.out.println(valid);
+        String moveLine;
+        if (type == MoveType.SIMPLE) {
+            Piece sp = getSelectedPiece();
+            moveLine = String.format("Simple(%d,%d,%d,%d)", sp.getRow(), sp.getColumn(), p.getI(), p.getJ());
+            simpleMovePiece(p);
+            //connection.send(moveLine);
+        }
+        else if (type == MoveType.JUMP) {
+            Piece sp = getSelectedPiece();
+            moveLine = String.format("Jump(%d,%d,%d,%d)", sp.getRow(), sp.getColumn(), p.getI(), p.getJ());
+            jumpMovePiece(p);
+            //connection.send(moveLine);
+        } else if (type == MoveType.END) {
+            endMove(p);
+            moveLine = "End";
+            //connection.send(moveLine);
+        } else moveLine = "";
+        return moveLine;
     }
 
     /**

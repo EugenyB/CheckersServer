@@ -1,4 +1,4 @@
-package checkers.client.main;
+package checkers.client.main.model;
 
 import javafx.scene.paint.Color;
 import lombok.Data;
